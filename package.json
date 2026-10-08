@@ -1,0 +1,10 @@
+{
+  "name": "betmaxx",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crypto casino with wallet deposits",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" }
+}

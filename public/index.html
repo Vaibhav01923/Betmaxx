@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BetMaxx — Crypto Casino</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <a class="logo" href="#/">Bet<span>Maxx</span></a>
+  <div class="mid">
+    <div id="balpill" hidden><span class="dot"></span><b id="bal">$0.00</b></div>
+    <button id="walletBtn" hidden>Wallet</button>
+  </div>
+  <div class="right">
+    <button id="loginBtn" class="ghost">Log in</button>
+    <button id="signupBtn">Register</button>
+    <div id="userbox" hidden><span id="uname"></span><button id="outBtn" class="ghost sm">Log out</button></div>
+  </div>
+</header>
+<aside id="rail">
+  <a href="#/" data-r="home" title="Casino"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></a>
+  <a href="#/bets" data-r="bets" title="My bets"><svg viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM8 8h8v2H8zm0 4h8v2H8z"/></svg></a>
+  <a href="#" id="railWallet" title="Wallet"><svg viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h13v3h2v13H5a2 2 0 0 1-2-2zm14 8a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg></a>
+</aside>
+<div id="banner" hidden></div>
+<main id="view"></main>
+
+<dialog id="authDlg">
+  <form method="dialog" id="authForm">
+    <h2 id="authTitle">Log in</h2>
+    <label>Username <input name="username" autocomplete="username" required></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+    <label class="chk" id="ageRow" hidden><input type="checkbox" name="age"> I am 18 or older and it is legal for me to gamble where I live</label>
+    <div class="err" id="authErr"></div>
+    <div class="row"><button type="button" class="ghost" id="authCancel">Cancel</button><button id="authOk">Continue</button></div>
+  </form>
+</dialog>
+
+<dialog id="walletDlg">
+  <div class="dlghead"><h2>Wallet</h2><button class="ghost sm" id="wClose">✕</button></div>
+  <div class="wbal">Balance <b id="wBal">$0.00</b></div>
+  <div class="tabs" id="wTabs"><button class="on" data-t="dep">Deposit</button><button data-t="wd">Withdraw</button><button data-t="hist">History</button></div>
+
+  <div id="wDep" class="wpane">
+    <div id="depForm">
+      <div class="coins" id="coinPick"></div>
+      <label>Amount (USD) <input id="depUsd" type="number" step="1" value="50"></label>
+      <div class="quick"><button data-v="25">$25</button><button data-v="50">$50</button><button data-v="100">$100</button><button data-v="250">$250</button></div>
+      <div class="err" id="depErr"></div>
+      <button id="depCreate">Get deposit address</button>
+    </div>
+    <div id="depResult" hidden>
+      <div class="warn" id="rNote" hidden></div>
+      <p class="muted">Send only <b id="rCoin"></b> to this address. Your balance is credited automatically after network confirmation.</p>
+      <div class="addr"><code id="rAddr"></code><button id="rCopy" class="ghost sm">Copy</button></div>
+      <div id="rAmt" class="muted"></div>
+      <div class="row"><button class="ghost" id="depBack">New deposit</button><button id="simBtn" hidden>Simulate payment (demo)</button></div>
+    </div>
+  </div>
+
+  <div id="wWd" class="wpane" hidden>
+    <div class="coins" id="wdCoinPick"></div>
+    <label>Destination address <input id="wdAddr" placeholder="Paste your wallet address" autocomplete="off" spellcheck="false"></label>
+    <label>Amount (USD) <div class="betrow"><span class="cur">$</span><input id="wdUsd" type="number" step="1" value="20"><button type="button" class="mini" id="wdMax">Max</button></div></label>
+    <div class="muted" id="wdInfo"></div>
+    <div class="err" id="wdErr"></div>
+    <button id="wdGo">Request withdrawal</button>
+  </div>
+
+  <div id="wHist" class="wpane" hidden>
+    <h3 class="sub">Deposits</h3><table id="depList"><tbody></tbody></table>
+    <h3 class="sub">Withdrawals</h3><table id="wdList"><tbody></tbody></table>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+<footer>
+  <b>18+ only.</b> Gambling involves risk — never bet more than you can afford to lose. Crypto transactions are irreversible.
+  Max bet <span id="fMax">$500</span>, max win per round <span id="fWin">$25,000</span>. If gambling stops being fun, take a break.
+</footer>
+<script src="app.js"></script>
+<script src="games-ui.js"></script>
+<script>B.boot();</script>
+</body>
+</html>
