@@ -3,16 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BetMaxx Admin — Withdrawals</title>
+<title>BetMaxx Admin</title>
 <link rel="stylesheet" href="style.css">
 <style>body{padding:20px}main{padding:0;max-width:1100px}.bar{display:flex;gap:10px;margin-bottom:16px}.bar input{max-width:360px}td code{font-size:12px;word-break:break-all}td button{padding:5px 10px;font-size:12px}</style>
 </head>
 <body>
 <main>
-  <h1>Withdrawal review</h1>
-  <p class="muted">Send each approved payout from your own wallet first, then paste the transaction hash and approve. Rejecting refunds the player's balance.</p>
+  <h1>BetMaxx admin</h1>
   <div class="bar"><input id="tok" type="password" placeholder="ADMIN_TOKEN"><button id="load">Load</button></div>
   <div class="err" id="err"></div>
+  <h2>Unmatched payments</h2>
+  <p class="muted">Deposits are credited automatically. Only payments that matched no deposit request show up here (wrong amount, expired request, no request at all). If a player contacts you, verify the transaction and credit them.</p>
+  <table><thead><tr><th>Seen</th><th>Coin</th><th>Amount</th><th>Transaction</th><th>Status</th><th></th></tr></thead><tbody id="drows"></tbody></table>
+  <h2 style="margin-top:32px">Withdrawals</h2>
+  <p class="muted">Send each payout from your own wallet first, then paste the transaction hash and approve. Rejecting refunds the player's balance.</p>
   <table><thead><tr><th>When</th><th>Player</th><th>Coin</th><th>USD</th><th>Address</th><th>Wagered / Deposited</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table>
 </main>
 <script>
@@ -25,11 +29,19 @@ const call = async (p, body) => {
 async function load() {
   $('#err').textContent = '';
   try {
-    const l = await call('withdrawals');
+    const dl = await call('unmatched');
+    $('#drows').innerHTML = dl.map((d) => `<tr><td>${new Date(d.seenAt).toLocaleString()}</td><td>${esc(d.coin)}</td><td>${esc(d.amount)}</td><td><code>${esc(d.key)}</code></td><td>${esc(d.status)}${d.resolvedUser ? '<br>→ ' + esc(d.resolvedUser) : ''}</td><td>${d.status === 'open' ? `<button data-k="${esc(d.key)}">Credit a player</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">None — all payments were matched</td></tr>';
+        const l = await call('withdrawals');
     $('#rows').innerHTML = l.map((w) => `<tr><td>${new Date(w.createdAt).toLocaleString()}</td><td>${esc(w.username)}</td><td>${esc(w.coin)}</td><td>$${(w.usd / 100).toFixed(2)}</td><td><code>${esc(w.address)}</code></td><td>$${((w.wagered || 0) / 100).toFixed(2)} / $${((w.deposited || 0) / 100).toFixed(2)}</td><td>${esc(w.status)}${w.txid ? '<br><code>' + esc(w.txid) + '</code>' : ''}</td><td>${w.status === 'pending' ? `<button data-a="approve" data-id="${w.id}">Approve</button> <button class="ghost" data-a="reject" data-id="${w.id}">Reject</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=8 class="muted">No withdrawals</td></tr>';
   } catch (e) { $('#err').textContent = e.message; }
 }
 $('#load').onclick = load;
+$('#drows').onclick = async (e) => {
+  const b = e.target.closest('button[data-k]'); if (!b) return;
+  const username = prompt('Player username to credit:'); if (!username) return;
+  const usd = prompt('USD value of this payment:'); if (!usd) return;
+  try { await call('unmatched/resolve', { key: b.dataset.k, username, usd }); load(); } catch (err) { $('#err').textContent = err.message; }
+};
 $('#rows').onclick = async (e) => {
   const b = e.target.closest('button[data-a]'); if (!b) return;
   const body = { id: b.dataset.id, action: b.dataset.a };

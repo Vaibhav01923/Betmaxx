@@ -53,9 +53,10 @@
     </div>
     <div id="depResult" hidden>
       <div class="warn" id="rNote" hidden></div>
-      <p class="muted">Send only <b id="rCoin"></b> to this address. Your balance is credited automatically after network confirmation.</p>
+      <p class="muted">Send only <b id="rCoin"></b> to this address. Your balance is credited automatically once the payment is confirmed on the blockchain. The amount must match exactly.</p>
       <div class="addr"><code id="rAddr"></code><button id="rCopy" class="ghost sm">Copy</button></div>
       <div id="rAmt" class="muted"></div>
+      <button id="rCopyAmt" class="ghost sm" hidden>Copy exact amount</button>
       <div class="row"><button class="ghost" id="depBack">New deposit</button><button id="simBtn" hidden>Simulate payment (demo)</button></div>
     </div>
   </div>

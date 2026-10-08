@@ -129,12 +129,14 @@ function openWallet(tab = 'dep') {
   if (!B.me) return B.openAuth('login');
   $('#wBal').textContent = usd(B.me.balance);
   $('#depUsd').min = B.cfg.minDeposit;
-  const picker = (id, get, set) => {
-    $(id).innerHTML = Object.entries(B.cfg.coins).map(([k, v]) => `<button data-c="${k}" class="${k === get() ? 'on' : ''}">${esc(v)}</button>`).join('');
+  const picker = (id, get, set, coins = B.cfg.coins) => {
+    $(id).innerHTML = Object.entries(coins).map(([k, v]) => `<button data-c="${k}" class="${k === get() ? 'on' : ''}">${esc(v)}</button>`).join('');
     $$(id + ' button').forEach((b) => (b.onclick = () => { set(b.dataset.c); $$(id + ' button').forEach((x) => x.classList.toggle('on', x === b)); }));
   };
+  if (!B.cfg.coins[coin]) coin = Object.keys(B.cfg.coins)[0];
   picker('#coinPick', () => coin, (c) => (coin = c));
-  picker('#wdCoinPick', () => wdCoin, (c) => (wdCoin = c));
+  $('#depCreate').disabled = !coin; if (!coin) $('#depErr').textContent = 'Deposits are not available right now.';
+  picker('#wdCoinPick', () => wdCoin, (c) => (wdCoin = c), B.cfg.allCoins);
   $('#depForm').hidden = false; $('#depResult').hidden = true; $('#depErr').textContent = $('#wdErr').textContent = '';
   tab_(tab); wdInfo(); lists();
   if (!$('#walletDlg').open) $('#walletDlg').showModal();
@@ -167,7 +169,9 @@ $('#depCreate').onclick = async (e) => {
     curDep = d;
     $('#depForm').hidden = true; $('#depResult').hidden = false;
     $('#rCoin').textContent = B.cfg.coins[d.coin]; $('#rAddr').textContent = d.address;
-    $('#rAmt').textContent = d.payAmount ? `Amount to send: ${d.payAmount} ${d.coin.replace('TRC20', '')} (≈ ${usd(d.usd)})` : `Credit: ${usd(d.usd)}`;
+    const sym = d.coin.startsWith('USDT') ? 'USDT' : d.coin;
+    $('#rAmt').innerHTML = B.cfg.provider === 'demo' ? `Credit: ${usd(d.usd)}` : `Send exactly <b class="amt">${esc(d.amount)} ${sym}</b> (you will be credited <b>${usd(d.usd)}</b>). Valid for 60 minutes. <span id="rStatus" class="muted">Waiting for your payment…</span>`;
+    $('#rCopyAmt').hidden = B.cfg.provider === 'demo'; $('#rCopyAmt').onclick = () => navigator.clipboard.writeText(d.amount).then(() => B.toast('Amount copied'));
     $('#rNote').hidden = !d.note; $('#rNote').textContent = d.note || '';
     $('#simBtn').hidden = B.cfg.provider !== 'demo';
     lists(); poll(d.id);
@@ -180,11 +184,15 @@ $('#simBtn').onclick = async () => {
   const r = await B.api('demo/confirm', { id: curDep.id });
   B.setBal(r.balance); await refreshMe(); lists(); $('#walletDlg').close(); B.toast('Demo deposit credited');
 };
-async function poll(id) {
-  for (let i = 0; i < 240 && $('#walletDlg').open; i++) {
+async function poll(id) { // watch one deposit until it is credited or expires
+  for (let i = 0; i < 800; i++) {
     await wait(5000);
-    const l = await B.api('deposits').catch(() => []);
-    if (l.find((d) => d.id === id)?.status === 'confirmed') { await refreshMe(); lists(); B.toast('Deposit confirmed'); return; }
+    if (!B.me) return;
+    const l = await B.api('deposits').catch(() => []), d = l.find((x) => x.id === id), st = $('#rStatus');
+    if (!d) return;
+    if (d.status === 'detected' && st) st.textContent = `Payment detected — waiting for confirmations (${d.confirmations})…`;
+    if (d.status === 'confirmed') { await refreshMe(); lists(); B.toast('Deposit credited ' + usd(d.credited)); if (st) st.textContent = 'Credited!'; return; }
+    if (d.status === 'expired') { if (st) st.textContent = 'This request expired. Create a new one.'; lists(); return; }
   }
 }
 $('#wdMax').onclick = () => ($('#wdUsd').value = Math.floor(B.me.balance / 100));
