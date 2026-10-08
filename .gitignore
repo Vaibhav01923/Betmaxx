@@ -1,5 +1,7 @@
 node_modules/
 .env
+.env.local
+.next/
+.vercel/
 data.json
-data.json.tmp
 .claude/

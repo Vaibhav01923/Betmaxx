@@ -76,6 +76,23 @@ create table if not exists public.bets (
 );
 create index if not exists bets_at_idx on public.bets(at desc);
 
+-- Per-request support tables (the app is serverless, so rate limits and scan throttling live in Postgres)
+create table if not exists public.rate_limits (
+  key text not null,
+  win bigint not null,
+  n int not null default 0,
+  at bigint not null default (extract(epoch from now()) * 1000)::bigint,
+  primary key (key, win)
+);
+create table if not exists public.kv (
+  key text primary key,
+  val bigint not null
+);
+-- two open deposit requests can never share the same exact amount
+create unique index if not exists deposits_coin_units_uniq on public.deposits(coin, units) where units is not null;
+
+alter table public.rate_limits enable row level security;
+alter table public.kv enable row level security;
 alter table public.users enable row level security;
 alter table public.deposits enable row level security;
 alter table public.withdrawals enable row level security;
