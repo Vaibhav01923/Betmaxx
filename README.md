@@ -16,7 +16,7 @@ Crypto casino: Next.js (static UI + serverless API) on Vercel, Postgres on Supab
 | `DEPOSIT_ADDR_BTC`, `_LTC`, `_USDTTRC20`, `_USDTERC20`, `_USDTBSC` | wallets you control. Empty = coin not offered |
 | `ADMIN_TOKEN` | 16+ random chars, unlocks `/admin.html` |
 | `CRON_SECRET` | 16+ random chars, protects `/api/cron/scan` |
-| `MIN_DEPOSIT_USD`, `MIN_WITHDRAW_USD` | optional, default 10 |
+| `MIN_DEPOSIT_USD`, `MIN_WITHDRAW_USD` | optional, defaults 1 and 5 |
 
 Never put these in the repo. `.env` is gitignored.
 
