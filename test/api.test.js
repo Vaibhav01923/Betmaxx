@@ -129,6 +129,24 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const ltc = await c1('POST', '/api/deposit', { coin: 'LTC', usd: 50 });
   ok('LTC quote is a valid 8-decimal amount', ltc.s === 200 && Number(ltc.amount) > 0 && (ltc.amount.split('.')[1] || '').length <= 8, JSON.stringify(ltc));
 
+  console.log('open deposits: view, reuse, cancel');
+  const c3 = mkClient(); await c3('POST', '/api/register', { username: 'erin', password: 'password123', age: true });
+  const dep3 = (usd) => c3('POST', '/api/deposit', { coin: 'USDTTRC20', usd });
+  const o1 = await dep3(10), o1b = await dep3(10);
+  ok('asking for the same coin + amount again reopens the same request', o1b.id === o1.id && o1b.amount === o1.amount, JSON.stringify([o1.id, o1b.id]));
+  const o2 = await dep3(11), o3 = await dep3(12), o4 = await dep3(13);
+  ok('a 4th open deposit is refused with guidance', o4.s === 400 && /Pay one of them below/.test(o4.error), JSON.stringify(o4));
+  ok('the open deposits are listed, still payable', (await c3('GET', '/api/deposits')).filter((d) => d.status === 'pending').length === 3);
+  ok("can't cancel another player's deposit", (await c1('POST', '/api/deposit/cancel', { id: o1.id })).s === 400);
+  ok("can't cancel a deposit that was already paid", (await c1('POST', '/api/deposit/cancel', { id: q1.id })).s === 400);
+  ok('cancelling works', (await c3('POST', '/api/deposit/cancel', { id: o2.id })).ok === true);
+  ok('cancelling frees a slot', (await dep3(13)).s === 200);
+  ok('cancelled shows as cancelled', (await c3('GET', '/api/deposits')).find((d) => d.id === o2.id).status === 'cancelled');
+  const u2 = (await pg.query('select units from deposits where id = $1', [o2.id])).rows[0].units;
+  chain = [{ coin: 'USDTTRC20', key: 'txCancelled', units: BigInt(u2), conf: 1 }];
+  await watch.scanCoin('USDTTRC20');
+  ok('a payment for a cancelled request is NOT auto-credited (goes to unmatched for review)', (await c3('GET', '/api/me')).user.balance === 0 && (await c1('GET', '/api/admin/unmatched', undefined, ADMIN)).some((x) => x.key === 'txCancelled'));
+
   console.log('cron endpoint');
   ok('cron without secret refused', (await mkClient()('GET', '/api/cron/scan')).s === 403);
   ok('cron with secret runs', (await mkClient()('GET', '/api/cron/scan', undefined, { authorization: 'Bearer ' + process.env.CRON_SECRET })).results?.length === 2);
